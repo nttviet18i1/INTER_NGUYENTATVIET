@@ -49,10 +49,60 @@ select hovaten from kh
     select hovaten from kh 
     union
     select hovaten from kh;
+  	-- 9Thực hiện thống kê doanh thu theo tháng,
+    -- nghĩa là tương ứng với mỗi tháng trong năm 2019 thì sẽ có bao nhiêu khách hàng thực hiện đặt phòng.
     
--- 9.Hiển thị thông tin tương ứng với từng Hợp đồng thì đã sử dụng bao nhiêu Dịch vụ đi kèm.
+    
+-- 10.Hiển thị thông tin tương ứng với từng Hợp đồng thì đã sử dụng bao nhiêu Dịch vụ đi kèm.
 --  Kết quả hiển thị bao gồm IDHopDong, NgayLamHopDong, NgayKetthuc, TienDatCoc, SoLuongDichVuDiKem 
 -- (được tính dựa trên việc count các IDHopDongChiTiet).
-select hopdong.id_hopdong, ngaylamhopdong,ngayketthuc,tiencoc,soluong,count(id_hopdongchitiet) from hopdong 
+select hopdong.id_hopdong, ngaylamhopdong,ngayketthuc,tiencoc,soluong,count(id_hopdongchitiet)as soluongdvdikem from hopdong 
     join hopdongchitiet on hopdong.id_hopdong= hopdongchitiet.id_hopdong
     group by id_hopdong;
+   -- 11.	Hiển thị thông tin các Dịch vụ đi kèm đã được sử dụng bởi những Khách hàng 
+   -- có TenLoaiKhachHang là “Diamond” và có địa chỉ là “Vinh” hoặc “Quảng Ngãi”.
+   Select dv_dikem.id_dvdikem,dv_dikem.ten_dvdikem,dv_dikem.gia ,kh.hovaten ,kh.diachi ,loai_kh.ten_loaikh from dv_dikem
+   join hopdongchitiet as hdct on dv_dikem.id_dvdikem=hdct.id_dvdikem
+   join hopdong as hd on hdct.id_hopdong=hd.id_hopdong
+   join kh on hd.id_kh=kh.id_kh
+   join loai_kh on kh.id_loaikh=loai_kh.id_loaikh
+ where kh.diachi in ("da nang","hue") and loai_kh.ten_loaikh='Diamond';
+ 
+ 
+ -- 12 Hiển thị thông tin IDHopDong, TenNhanVien, TenKhachHang,
+-- SoDienThoaiKhachHang, TenDichVu, SoLuongDichVuDikem (được
+-- tính dựa trên tổng Hợp đồng chi tiết), TienDatCoc của tất cả các dịch vụ
+-- đã từng được khách hàng đặt vào 3 tháng cuối năm 2019 nhưng chưa
+-- từng được khách hàng đặt vào 6 tháng đầu năm 2019.
+select hopdong.id_hopdong,nhanvien.hoten,kh.hovaten,kh.so_cmnd,dv.ten_dv,hopdongchitiet.soluong,hopdong.tiencoc,
+count(hopdongchitiet.id_hopdongchitiet) as solansudung from hopdong
+join  nhanvien on hopdong.id_nhanvien= nhanvien.id_nhanvien
+join kh on  hopdong.id_kh=kh.id_kh
+join dv on hopdong.id_dichvu= dv.id_dichvu
+join hopdongchitiet on hopdong.id_hopdong=hopdongchitiet.id_hopdong
+where not exists (select hopdong.id_hopdong where hopdong.ngaylamhopdong between "2019-01-01"and "2019-06-31")
+and  not exists (select hopdong.id_hopdong where hopdong.ngaylamhopdong between "2019-09-01"and "2019-12-31");
+-- 13 Hiển thị thông tin các Dịch vụ đi kèm được sử dụng nhiều nhất bởi các
+-- Khách hàng đã đặt phòng.
+
+select hopdongchitiet.id_hopdong, dv_dikem.ten_dvdikem,count(dv_dikem.ten_dvdikem)as solandat from dv_dikem
+join hopdongchitiet on hopdongchitiet.id_dvdikem=dv_dikem.id_dvdikem
+group by dv_dikem.ten_dvdikem;
+-- 14  Hiển thị thông tin tất cả các Dịch vụ đi kèm chỉ mới được sử dụng một
+-- lần duy nhất. Thông tin hiển thị bao gồm IDHopDong, TenLoaiDichVu,
+-- TenDichVuDiKem, SoLanSuDung.
+select hopdongchitiet.id_hopdong, dv_dikem.ten_dvdikem,count(dv_dikem.ten_dvdikem)as solandat from dv_dikem
+join hopdongchitiet on hopdongchitiet.id_dvdikem=dv_dikem.id_dvdikem
+group by dv_dikem.ten_dvdikem
+having solandat=1;
+-- 15 Hiển thi thông tin của tất cả nhân viên bao gồm IDNhanVien, HoTen,
+-- TrinhDo, TenBoPhan, SoDienThoai, DiaChi mới chỉ lập được tối đa 3
+-- hợp đồng từ năm 2018 đến 2019.
+
+select nhanvien.id_nhanvien,nhanvien.hoten,nhanvien.so_cmnd,trinhdo.trinh_do, bophan.ten_bophan,nhanvien.diachi , count(nhanvien.id_nhanvien) as laphopdong from nhanvien
+join hopdong on nhanvien.id_nhanvien=hopdong.id_nhanvien
+join bophan on nhanvien.id_bophan=bophan.id_bophan
+join trinhdo on trinhdo.id_trinhdo= nhanvien.id_trinhdo
+having laphopdong >3;
+
+-- 16
